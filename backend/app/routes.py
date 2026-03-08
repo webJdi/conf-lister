@@ -3,7 +3,7 @@ import io
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 
 from app.auth import get_current_user
@@ -140,7 +140,7 @@ async def remove_conference(
 @router.put("/conferences/{conference_id}", response_model=ConferenceResponse)
 async def edit_conference(
     conference_id: str,
-    data: dict,
+    data: dict = Body(...),
     user: dict = Depends(get_current_user),
 ):
     """Update a conference."""

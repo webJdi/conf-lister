@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from google.cloud.firestore_v1 import FieldFilter
@@ -43,8 +43,8 @@ async def save_conferences(conferences: list[ConferenceBase]) -> int:
 
         data = conf.model_dump()
         data["name_lower"] = conf.name.lower().strip()
-        data["created_at"] = datetime.utcnow()
-        data["updated_at"] = datetime.utcnow()
+        data["created_at"] = datetime.now(timezone.utc)
+        data["updated_at"] = datetime.now(timezone.utc)
 
         collection.add(data)
         saved += 1
@@ -69,13 +69,15 @@ async def get_all_conferences(
     conferences = [_doc_to_conference(doc) for doc in docs]
 
     if sort_by_date:
-        now = datetime.utcnow()
-        # Sort: conferences with parsed dates first (by closest upcoming),
-        # then those without dates
+        now = datetime.now(timezone.utc)
+
         def sort_key(c: ConferenceInDB):
             if c.date_parsed:
-                diff = (c.date_parsed - now).total_seconds()
-                # Upcoming events first (positive diff), then past
+                # Ensure timezone-aware for comparison (Firestore returns aware datetimes)
+                dp = c.date_parsed
+                if dp.tzinfo is None:
+                    dp = dp.replace(tzinfo=timezone.utc)
+                diff = (dp - now).total_seconds()
                 if diff >= 0:
                     return (0, diff)
                 return (1, -diff)
@@ -112,7 +114,7 @@ async def update_conference(
     doc = doc_ref.get()
     if not doc.exists:
         return None
-    data["updated_at"] = datetime.utcnow()
+    data["updated_at"] = datetime.now(timezone.utc)
     if "name" in data:
         data["name_lower"] = data["name"].lower().strip()
     doc_ref.update(data)
@@ -131,7 +133,7 @@ async def get_stats() -> dict:
     conferences_count = 0
     awards_count = 0
     upcoming_count = 0
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     for doc in all_docs:
         data = doc.to_dict()
@@ -139,8 +141,12 @@ async def get_stats() -> dict:
             awards_count += 1
         else:
             conferences_count += 1
-        if data.get("date_parsed") and data["date_parsed"].replace(tzinfo=None) >= now:
-            upcoming_count += 1
+        dp = data.get("date_parsed")
+        if dp:
+            if hasattr(dp, "tzinfo") and dp.tzinfo is None:
+                dp = dp.replace(tzinfo=timezone.utc)
+            if dp >= now:
+                upcoming_count += 1
 
     return {
         "total": total,

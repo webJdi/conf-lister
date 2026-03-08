@@ -20,6 +20,9 @@ import {
   CircularProgress,
   Alert,
   Link,
+  Stack,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
@@ -27,19 +30,99 @@ import EventIcon from "@mui/icons-material/Event";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import ListAltIcon from "@mui/icons-material/ListAlt";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import { getConferences, deleteConference, getStats } from "../services/api";
 
-const categoryColors = {
-  conference: "primary",
-  award: "secondary",
-};
+const categoryColors = { conference: "primary", award: "secondary" };
 
+// ── Mobile card for a single conference entry ──────────────────────────────
+function ConferenceCard({ conf, onDelete }) {
+  return (
+    <Card sx={{ borderRadius: 2, mb: 2 }}>
+      <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 1 }}>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography variant="subtitle1" fontWeight={700} sx={{ lineHeight: 1.3, mb: 0.75 }}>
+              {conf.name}
+            </Typography>
+            <Chip
+              label={conf.category}
+              size="small"
+              color={categoryColors[conf.category] || "default"}
+              sx={{ mb: 1 }}
+            />
+            {conf.date && (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
+                <CalendarTodayIcon sx={{ fontSize: 13, color: "text.secondary" }} />
+                <Typography variant="body2" color="text.secondary">{conf.date}</Typography>
+              </Box>
+            )}
+            {conf.venue && (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
+                <LocationOnIcon sx={{ fontSize: 13, color: "text.secondary" }} />
+                <Typography variant="body2" color="text.secondary" noWrap>{conf.venue}</Typography>
+              </Box>
+            )}
+            {conf.description && (
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{
+                  display: "-webkit-box",
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                  mt: 0.75,
+                }}
+              >
+                {conf.description}
+              </Typography>
+            )}
+            {conf.topics?.length > 0 && (
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mt: 1 }}>
+                {conf.topics.map((t) => (
+                  <Chip key={t} label={t} size="small" variant="outlined" />
+                ))}
+              </Box>
+            )}
+          </Box>
+          <Stack direction="column" spacing={0.5} sx={{ flexShrink: 0 }}>
+            {conf.url && (
+              <Tooltip title="Open link">
+                <IconButton
+                  size="small"
+                  component={Link}
+                  href={conf.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <OpenInNewIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+            <Tooltip title="Delete">
+              <IconButton size="small" color="error" onClick={() => onDelete(conf.id)}>
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Stack>
+        </Box>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ── Main Dashboard ─────────────────────────────────────────────────────────
 export default function Dashboard() {
   const [conferences, setConferences] = useState([]);
   const [stats, setStats] = useState({ total: 0, conferences: 0, awards: 0, upcoming: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [tab, setTab] = useState(0); // 0=all, 1=conferences, 2=awards
+  const [tab, setTab] = useState(0);
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   const categoryFilter = tab === 1 ? "conference" : tab === 2 ? "award" : null;
 
@@ -53,7 +136,7 @@ export default function Dashboard() {
       ]);
       setConferences(confRes.data);
       setStats(statsRes.data);
-    } catch (err) {
+    } catch {
       setError("Failed to load data. Make sure the backend is running.");
     }
     setLoading(false);
@@ -74,7 +157,7 @@ export default function Dashboard() {
   }
 
   const statCards = [
-    { label: "Total Entries", value: stats.total, icon: <ListAltIcon />, color: "#1976d2" },
+    { label: "Total", value: stats.total, icon: <ListAltIcon />, color: "#1976d2" },
     { label: "Conferences", value: stats.conferences, icon: <EventIcon />, color: "#2e7d32" },
     { label: "Awards", value: stats.awards, icon: <EmojiEventsIcon />, color: "#ed6c02" },
     { label: "Upcoming", value: stats.upcoming, icon: <TrendingUpIcon />, color: "#9c27b0" },
@@ -82,28 +165,37 @@ export default function Dashboard() {
 
   return (
     <Box>
-      <Typography variant="h4" fontWeight={700} sx={{ mb: 3 }}>
+      <Typography
+        component="h1"
+        fontWeight={700}
+        sx={{ mb: 3, fontSize: { xs: "1.5rem", md: "2rem" } }}
+      >
         Dashboard
       </Typography>
 
-      {/* Stat Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      {/* ── Stat cards: 2-per-row on mobile, 4 on desktop ── */}
+      <Grid container spacing={{ xs: 1.5, md: 2 }} sx={{ mb: 3 }}>
         {statCards.map((s) => (
-          <Grid item xs={12} sm={6} md={3} key={s.label}>
-            <Card
-              sx={{
-                borderRadius: 2,
-                borderLeft: `4px solid ${s.color}`,
-                height: "100%",
-              }}
-            >
-              <CardContent sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Grid item xs={6} md={3} key={s.label}>
+            <Card sx={{ borderRadius: 2, borderLeft: `4px solid ${s.color}`, height: "100%" }}>
+              <CardContent
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: { xs: 1, md: 2 },
+                  p: { xs: 1.5, md: 2 },
+                  "&:last-child": { pb: { xs: 1.5, md: 2 } },
+                }}
+              >
                 <Box sx={{ color: s.color, display: "flex" }}>{s.icon}</Box>
                 <Box>
-                  <Typography variant="h4" fontWeight={700}>
+                  <Typography
+                    fontWeight={700}
+                    sx={{ fontSize: { xs: "1.4rem", md: "1.8rem" }, lineHeight: 1 }}
+                  >
                     {loading ? "-" : s.value}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="caption" color="text.secondary">
                     {s.label}
                   </Typography>
                 </Box>
@@ -113,20 +205,21 @@ export default function Dashboard() {
         ))}
       </Grid>
 
-      {/* Filter Tabs */}
-      <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
+      {/* ── Filter tabs ── */}
+      <Tabs
+        value={tab}
+        onChange={(_, v) => setTab(v)}
+        variant="scrollable"
+        scrollButtons="auto"
+        sx={{ mb: 2 }}
+      >
         <Tab label="All" />
         <Tab label="Conferences" />
         <Tab label="Awards" />
       </Tabs>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      {/* Conference Table */}
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
           <CircularProgress />
@@ -135,26 +228,32 @@ export default function Dashboard() {
         <Alert severity="info">
           No entries found. Use the Scrape Control panel to fetch conference data.
         </Alert>
+      ) : isMobile ? (
+        // ── Mobile: card list ──────────────────────────────────────────
+        <Box>
+          {conferences.map((conf) => (
+            <ConferenceCard key={conf.id} conf={conf} onDelete={handleDelete} />
+          ))}
+        </Box>
       ) : (
+        // ── Desktop: table ─────────────────────────────────────────────
         <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
           <Table>
             <TableHead>
               <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
                 <TableCell sx={{ fontWeight: 700 }}>Conference / Award</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Date</TableCell>
+                <TableCell sx={{ fontWeight: 700, whiteSpace: "nowrap" }}>Date</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Venue</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Category</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Topics</TableCell>
-                <TableCell sx={{ fontWeight: 700, width: 100 }}>Actions</TableCell>
+                <TableCell sx={{ fontWeight: 700, width: 90 }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {conferences.map((conf) => (
                 <TableRow key={conf.id} hover>
-                  <TableCell>
-                    <Typography variant="body2" fontWeight={600}>
-                      {conf.name}
-                    </Typography>
+                  <TableCell sx={{ maxWidth: 340 }}>
+                    <Typography variant="body2" fontWeight={600}>{conf.name}</Typography>
                     {conf.description && (
                       <Typography
                         variant="caption"
@@ -164,7 +263,6 @@ export default function Dashboard() {
                           WebkitLineClamp: 2,
                           WebkitBoxOrient: "vertical",
                           overflow: "hidden",
-                          maxWidth: 400,
                         }}
                       >
                         {conf.description}
@@ -172,14 +270,10 @@ export default function Dashboard() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <Typography variant="body2">
-                      {conf.date || "TBD"}
-                    </Typography>
+                    <Typography variant="body2" noWrap>{conf.date || "TBD"}</Typography>
                   </TableCell>
                   <TableCell>
-                    <Typography variant="body2">
-                      {conf.venue || "TBD"}
-                    </Typography>
+                    <Typography variant="body2">{conf.venue || "TBD"}</Typography>
                   </TableCell>
                   <TableCell>
                     <Chip

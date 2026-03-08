@@ -136,12 +136,12 @@ export default function Layout() {
               <MenuIcon />
             </IconButton>
             <Typography variant="h6" fontWeight={600}>
-              Conf-Lister
+              Quick Lister
             </Typography>
           </Toolbar>
         </AppBar>
 
-        <Box component="main" sx={{ flex: 1, p: 3, maxWidth: 1200 }}>
+        <Box component="main" sx={{ flex: 1, p: { xs: 2, sm: 3 }, maxWidth: 1200 }}>
           <Outlet />
         </Box>
       </Box>

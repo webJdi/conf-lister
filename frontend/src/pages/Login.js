@@ -66,10 +66,10 @@ export default function Login() {
             <Box sx={{ textAlign: "center", mb: 3 }}>
               <OilBarrelIcon sx={{ fontSize: 48, color: "#1976d2", mb: 1 }} />
               <Typography variant="h5" fontWeight={700}>
-                Conf-Lister
+                Quick Lister
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Oil & Gas Conference Tracker
+                Oil & Gas Conference & Awards Tracker
               </Typography>
             </Box>
 

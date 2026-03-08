@@ -90,14 +90,29 @@ export default function ScrapeControl() {
 
   return (
     <Box>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h4" fontWeight={700}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          justifyContent: "space-between",
+          alignItems: { xs: "flex-start", sm: "center" },
+          gap: 2,
+          mb: 3,
+        }}
+      >
+        <Typography
+          component="h1"
+          fontWeight={700}
+          sx={{ fontSize: { xs: "1.5rem", md: "2rem" } }}
+        >
           Scrape Control
         </Typography>
         <Button
           variant="outlined"
           startIcon={<DownloadIcon />}
           onClick={handleDownload}
+          fullWidth={false}
+          sx={{ alignSelf: { xs: "stretch", sm: "auto" } }}
         >
           Download CSV
         </Button>
@@ -150,7 +165,7 @@ export default function ScrapeControl() {
             min={1}
             max={50}
             valueLabelDisplay="auto"
-            sx={{ maxWidth: 400, mb: 3 }}
+            sx={{ maxWidth: { xs: "100%", sm: 400 }, mb: 3 }}
           />
 
           {/* Scrape button */}
@@ -160,7 +175,13 @@ export default function ScrapeControl() {
             startIcon={<SearchIcon />}
             onClick={handleScrape}
             disabled={scraping}
-            sx={{ py: 1.5, px: 4, fontWeight: 600 }}
+            fullWidth
+            sx={{
+              py: 1.5,
+              px: 4,
+              fontWeight: 600,
+              maxWidth: { sm: 280 },
+            }}
           >
             {scraping ? "Scraping..." : "Start Scrape"}
           </Button>

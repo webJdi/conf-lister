@@ -124,7 +124,7 @@ async def scrape_search_results(
                 response = await client.get(search_url)
                 response.raise_for_status()
 
-                soup = BeautifulSoup(response.text, "lxml")
+                soup = BeautifulSoup(response.text, "html.parser")
                 results = soup.select(".result__body")[:max_results_per_keyword]
 
                 for result in results:
@@ -208,7 +208,7 @@ async def scrape_search_results(
             ) as client:
                 resp = await client.get(source_url)
                 if resp.status_code == 200:
-                    soup = BeautifulSoup(resp.text, "lxml")
+                    soup = BeautifulSoup(resp.text, "html.parser")
                     # Extract event cards/listings
                     events = soup.select(
                         ".event-card, .conference-listing, article, .listing-item, .event-item"

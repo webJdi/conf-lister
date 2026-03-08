@@ -1,9 +1,8 @@
 fastapi==0.110.0
 uvicorn==0.27.1
-firebase-admin==6.4.0
+firebase-admin>=6.4.0
 httpx==0.27.0
 beautifulsoup4==4.12.3
-lxml==5.1.0
 python-dotenv==1.0.1
-pydantic==2.6.1
+pydantic==2.10.6
 apscheduler==3.10.4
