@@ -193,7 +193,7 @@ export default function Dashboard() {
         getConferences(categoryFilter),
         getStats(),
       ]);
-      setConferences(confRes.data);
+      setConferences(Array.isArray(confRes.data) ? confRes.data : []);
       setStats(statsRes.data);
     } catch {
       setError("Failed to load data. Make sure the backend is running.");
