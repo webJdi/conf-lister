@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { alpha } from "@mui/material/styles";
 import {
   Box,
   Card,
@@ -21,10 +22,17 @@ import {
   Alert,
   Link,
   Stack,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import EventIcon from "@mui/icons-material/Event";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
@@ -32,12 +40,57 @@ import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import { getConferences, deleteConference, getStats } from "../services/api";
+import { getConferences, deleteConference, updateConference, getStats } from "../services/api";
+
+// ── Edit-name dialog ───────────────────────────────────────────────────────
+function EditNameDialog({ conf, onClose, onSaved }) {
+  const [name, setName] = useState(conf?.name ?? "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSave() {
+    const trimmed = name.trim();
+    if (!trimmed) { setError("Name cannot be empty"); return; }
+    setSaving(true);
+    setError("");
+    try {
+      await updateConference(conf.id, { name: trimmed });
+      onSaved();
+    } catch {
+      setError("Failed to save — try again");
+    }
+    setSaving(false);
+  }
+
+  return (
+    <Dialog open onClose={onClose} fullWidth maxWidth="sm">
+      <DialogTitle>Rename Entry</DialogTitle>
+      <DialogContent>
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        <TextField
+          autoFocus
+          label="Name"
+          fullWidth
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSave()}
+          sx={{ mt: 1 }}
+        />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} disabled={saving}>Cancel</Button>
+        <Button variant="contained" onClick={handleSave} disabled={saving}>
+          {saving ? "Saving…" : "Save"}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
 
 const categoryColors = { conference: "primary", award: "secondary" };
 
 // ── Mobile card for a single conference entry ──────────────────────────────
-function ConferenceCard({ conf, onDelete }) {
+function ConferenceCard({ conf, onDelete, onEdit }) {
   return (
     <Card sx={{ borderRadius: 2, mb: 2 }}>
       <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
@@ -101,6 +154,11 @@ function ConferenceCard({ conf, onDelete }) {
                 </IconButton>
               </Tooltip>
             )}
+            <Tooltip title="Rename">
+              <IconButton size="small" onClick={() => onEdit(conf)}>
+                <EditIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
             <Tooltip title="Delete">
               <IconButton size="small" color="error" onClick={() => onDelete(conf.id)}>
                 <DeleteIcon fontSize="small" />
@@ -120,6 +178,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [tab, setTab] = useState(0);
+  const [editTarget, setEditTarget] = useState(null);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -156,15 +215,28 @@ export default function Dashboard() {
     }
   }
 
+  function handleEditSaved() {
+    setEditTarget(null);
+    fetchData();
+  }
+
   const statCards = [
-    { label: "Total", value: stats.total, icon: <ListAltIcon />, color: "#1976d2" },
-    { label: "Conferences", value: stats.conferences, icon: <EventIcon />, color: "#2e7d32" },
-    { label: "Awards", value: stats.awards, icon: <EmojiEventsIcon />, color: "#ed6c02" },
-    { label: "Upcoming", value: stats.upcoming, icon: <TrendingUpIcon />, color: "#9c27b0" },
+    { label: "Total", value: stats.total, icon: <ListAltIcon />, color: theme.palette.primary.main },
+    { label: "Conferences", value: stats.conferences, icon: <EventIcon />, color: theme.palette.success.light },
+    { label: "Awards", value: stats.awards, icon: <EmojiEventsIcon />, color: theme.palette.warning.main },
+    { label: "Upcoming", value: stats.upcoming, icon: <TrendingUpIcon />, color: theme.palette.secondary.main },
   ];
 
   return (
     <Box>
+      {editTarget && (
+        <EditNameDialog
+          conf={editTarget}
+          onClose={() => setEditTarget(null)}
+          onSaved={handleEditSaved}
+        />
+      )}
+
       <Typography
         component="h1"
         fontWeight={700}
@@ -177,7 +249,7 @@ export default function Dashboard() {
       <Grid container spacing={{ xs: 1.5, md: 2 }} sx={{ mb: 3 }}>
         {statCards.map((s) => (
           <Grid item xs={6} md={3} key={s.label}>
-            <Card sx={{ borderRadius: 2, borderLeft: `4px solid ${s.color}`, height: "100%" }}>
+            <Card sx={{ borderRadius: 2, bgcolor: alpha(s.color, 0.18), height: "100%" }}>
               <CardContent
                 sx={{
                   display: "flex",
@@ -232,7 +304,7 @@ export default function Dashboard() {
         // ── Mobile: card list ──────────────────────────────────────────
         <Box>
           {conferences.map((conf) => (
-            <ConferenceCard key={conf.id} conf={conf} onDelete={handleDelete} />
+            <ConferenceCard key={conf.id} conf={conf} onDelete={handleDelete} onEdit={setEditTarget} />
           ))}
         </Box>
       ) : (
@@ -240,7 +312,7 @@ export default function Dashboard() {
         <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
           <Table>
             <TableHead>
-              <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+              <TableRow sx={{ bgcolor: "action.hover" }}>
                 <TableCell sx={{ fontWeight: 700 }}>Conference / Award</TableCell>
                 <TableCell sx={{ fontWeight: 700, whiteSpace: "nowrap" }}>Date</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Venue</TableCell>
@@ -304,6 +376,11 @@ export default function Dashboard() {
                           </IconButton>
                         </Tooltip>
                       )}
+                      <Tooltip title="Rename">
+                        <IconButton size="small" onClick={() => setEditTarget(conf)}>
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                       <Tooltip title="Delete">
                         <IconButton
                           size="small"

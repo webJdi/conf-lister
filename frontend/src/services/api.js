@@ -1,4 +1,5 @@
 import axios from "axios";
+import { auth } from "../firebase";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
@@ -6,14 +7,19 @@ const api = axios.create({
   baseURL: API_URL,
 });
 
-// Add auth token to every request
-export function setAuthToken(token) {
-  if (token) {
-    api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-  } else {
-    delete api.defaults.headers.common["Authorization"];
+// Attach a fresh Firebase ID token to every outgoing request.
+// Firebase SDK transparently refreshes expired tokens, so this is always valid.
+api.interceptors.request.use(async (config) => {
+  const user = auth.currentUser;
+  if (user) {
+    const token = await user.getIdToken();
+    config.headers["Authorization"] = `Bearer ${token}`;
   }
-}
+  return config;
+});
+
+// Kept for backward compatibility — no-op now that the interceptor handles auth.
+export function setAuthToken() {}
 
 // Conferences
 export const getConferences = (category) =>

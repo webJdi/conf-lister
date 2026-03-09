@@ -44,9 +44,9 @@ export default function Layout() {
   const drawer = (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <Toolbar>
-        <OilBarrelIcon sx={{ mr: 1, color: "#1976d2" }} />
+        <OilBarrelIcon sx={{ mr: 1, color: "primary.main" }} />
         <Typography variant="h6" fontWeight={700} noWrap>
-          Conf-Lister
+          Quick Lister
         </Typography>
       </Toolbar>
       <Divider />
@@ -69,7 +69,7 @@ export default function Layout() {
       </List>
       <Divider />
       <Box sx={{ p: 2, display: "flex", alignItems: "center", gap: 1 }}>
-        <Avatar sx={{ width: 32, height: 32, fontSize: 14, bgcolor: "#1976d2" }}>
+        <Avatar sx={{ width: 32, height: 32, fontSize: 14, bgcolor: "primary.main" }}>
           {currentUser?.email?.charAt(0)?.toUpperCase() || "U"}
         </Avatar>
         <Typography variant="caption" noWrap sx={{ flex: 1 }}>
@@ -85,7 +85,7 @@ export default function Layout() {
   );
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#f8f9fa" }}>
+    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default" }}>
       {/* Sidebar */}
       <Box
         component="nav"
@@ -111,7 +111,8 @@ export default function Layout() {
             display: { xs: "none", md: "block" },
             "& .MuiDrawer-paper": {
               width: DRAWER_WIDTH,
-              borderRight: "1px solid #e0e0e0",
+              borderRight: "1px solid",
+              borderColor: "divider",
             },
           }}
           open
@@ -128,7 +129,8 @@ export default function Layout() {
           elevation={0}
           sx={{
             display: { md: "none" },
-            borderBottom: "1px solid #e0e0e0",
+            borderBottom: "1px solid",
+            borderColor: "divider",
           }}
         >
           <Toolbar>

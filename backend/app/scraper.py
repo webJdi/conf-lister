@@ -198,8 +198,13 @@ async def scrape_search_results(
 
     # Now try to enrich from known conference listing sites
     known_sources = [
-        "https://10times.com/technology/oil-gas",
-        "https://www.conferenceindex.org/conferences/petroleum",
+        "https://www.otcasia.org/",
+        "https://www.spe.org/en/events/calendar/?gad_source=1&gad_campaignid=22295619543&gbraid=0AAAAADcmBRhLglYhFXtpdduVKr4t26MAa&gclid=Cj0KCQiA2bTNBhDjARIsAK89wlEXCoq-BDf7MX8Puv1dOHxVsrTmFpX_EQ3Jfu8RnmyCOmX3-NppYH8aAvUtEALw_wcB",
+        "https://www.adipec.com/",
+        "https://www.ceraweek.com/en",
+        "https://www.gastechevent.com/",
+        "https://www.drillingconference.org/",
+        "https://napeexpo.com/summit"
     ]
     for source_url in known_sources:
         try:

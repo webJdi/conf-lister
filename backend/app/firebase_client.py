@@ -1,7 +1,12 @@
+"""Firebase initialisation and token verification using the Admin SDK."""
+
+import os
+import logging
 import firebase_admin
 from firebase_admin import credentials, firestore, auth as firebase_auth
 from app.config import settings
 
+logger = logging.getLogger(__name__)
 _initialized = False
 
 
@@ -9,9 +14,22 @@ def init_firebase():
     global _initialized
     if _initialized:
         return
-    cred = credentials.Certificate(settings.FIREBASE_SERVICE_ACCOUNT_PATH)
-    firebase_admin.initialize_app(cred, {"projectId": settings.FIREBASE_PROJECT_ID})
+
+    sa_path = settings.FIREBASE_SERVICE_ACCOUNT_PATH
+    if not os.path.exists(sa_path):
+        raise RuntimeError(
+            f"Firebase service account key not found at '{sa_path}'.\n"
+            "  Place the JSON file downloaded from Firebase Console → Project Settings → Service Accounts."
+        )
+
+    project_id = settings.FIREBASE_PROJECT_ID
+    if not project_id:
+        raise RuntimeError("FIREBASE_PROJECT_ID is not set in backend/.env")
+
+    cred = credentials.Certificate(sa_path)
+    firebase_admin.initialize_app(cred, {"projectId": project_id})
     _initialized = True
+    logger.info("Firebase Admin SDK initialised for project: %s", project_id)
 
 
 def get_firestore_client():
@@ -22,4 +40,8 @@ def get_firestore_client():
 def verify_firebase_token(id_token: str) -> dict:
     """Verify a Firebase ID token and return the decoded claims."""
     init_firebase()
-    return firebase_auth.verify_id_token(id_token)
+    try:
+        return firebase_auth.verify_id_token(id_token)
+    except Exception as exc:
+        logger.error("Token verification failed: %s", exc)
+        raise

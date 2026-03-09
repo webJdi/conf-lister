@@ -1,3 +1,5 @@
+"""Conference storage backed by Firestore."""
+
 import logging
 from datetime import datetime, timezone
 from typing import Optional
@@ -15,9 +17,11 @@ COLLECTION_NAME = "conferences"
 def _doc_to_conference(doc) -> ConferenceInDB:
     data = doc.to_dict()
     data["id"] = doc.id
-    # Convert Firestore timestamps
-    if data.get("date_parsed") and hasattr(data["date_parsed"], "isoformat"):
-        data["date_parsed"] = data["date_parsed"]
+    # Firestore Timestamps → datetime (already datetime-like, just pass through)
+    for field in ("date_parsed", "created_at", "updated_at"):
+        val = data.get(field)
+        if val and hasattr(val, "isoformat"):
+            data[field] = val
     return ConferenceInDB(**data)
 
 
@@ -28,27 +32,23 @@ async def save_conferences(conferences: list[ConferenceBase]) -> int:
     saved = 0
 
     for conf in conferences:
-        # Check for duplicates by name (case-insensitive match via lowercase field)
         existing = (
-            collection.where(
-                filter=FieldFilter("name_lower", "==", conf.name.lower().strip())
-            )
+            collection
+            .where(filter=FieldFilter("name_lower", "==", conf.name.lower().strip()))
             .limit(1)
             .get()
         )
-
-        if len(list(existing)) > 0:
-            logger.info(f"Skipping duplicate: {conf.name}")
+        if list(existing):
+            logger.info("Skipping duplicate: %s", conf.name)
             continue
 
         data = conf.model_dump()
         data["name_lower"] = conf.name.lower().strip()
         data["created_at"] = datetime.now(timezone.utc)
         data["updated_at"] = datetime.now(timezone.utc)
-
         collection.add(data)
         saved += 1
-        logger.info(f"Saved: {conf.name}")
+        logger.info("Saved: %s", conf.name)
 
     return saved
 
@@ -57,10 +57,8 @@ async def get_all_conferences(
     category: Optional[str] = None,
     sort_by_date: bool = True,
 ) -> list[ConferenceInDB]:
-    """Get all conferences, optionally filtered by category, sorted by date."""
     db = get_firestore_client()
     collection = db.collection(COLLECTION_NAME)
-
     query = collection
     if category:
         query = query.where(filter=FieldFilter("category", "==", category))
@@ -73,14 +71,11 @@ async def get_all_conferences(
 
         def sort_key(c: ConferenceInDB):
             if c.date_parsed:
-                # Ensure timezone-aware for comparison (Firestore returns aware datetimes)
                 dp = c.date_parsed
                 if dp.tzinfo is None:
                     dp = dp.replace(tzinfo=timezone.utc)
                 diff = (dp - now).total_seconds()
-                if diff >= 0:
-                    return (0, diff)
-                return (1, -diff)
+                return (0, diff) if diff >= 0 else (1, -diff)
             return (2, 0)
 
         conferences.sort(key=sort_key)
@@ -99,8 +94,7 @@ async def get_conference_by_id(conference_id: str) -> Optional[ConferenceInDB]:
 async def delete_conference(conference_id: str) -> bool:
     db = get_firestore_client()
     doc_ref = db.collection(COLLECTION_NAME).document(conference_id)
-    doc = doc_ref.get()
-    if doc.exists:
+    if doc_ref.get().exists:
         doc_ref.delete()
         return True
     return False
@@ -111,37 +105,31 @@ async def update_conference(
 ) -> Optional[ConferenceInDB]:
     db = get_firestore_client()
     doc_ref = db.collection(COLLECTION_NAME).document(conference_id)
-    doc = doc_ref.get()
-    if not doc.exists:
+    if not doc_ref.get().exists:
         return None
     data["updated_at"] = datetime.now(timezone.utc)
     if "name" in data:
         data["name_lower"] = data["name"].lower().strip()
     doc_ref.update(data)
-    updated_doc = doc_ref.get()
-    return _doc_to_conference(updated_doc)
+    return _doc_to_conference(doc_ref.get())
 
 
 async def get_stats() -> dict:
-    """Get dashboard statistics."""
     db = get_firestore_client()
     collection = db.collection(COLLECTION_NAME)
-
     all_docs = list(collection.stream())
     total = len(all_docs)
 
-    conferences_count = 0
-    awards_count = 0
-    upcoming_count = 0
+    conferences_count = awards_count = upcoming_count = 0
     now = datetime.now(timezone.utc)
 
     for doc in all_docs:
-        data = doc.to_dict()
-        if data.get("category") == "award":
+        d = doc.to_dict()
+        if d.get("category") == "award":
             awards_count += 1
         else:
             conferences_count += 1
-        dp = data.get("date_parsed")
+        dp = d.get("date_parsed")
         if dp:
             if hasattr(dp, "tzinfo") and dp.tzinfo is None:
                 dp = dp.replace(tzinfo=timezone.utc)
@@ -154,3 +142,5 @@ async def get_stats() -> dict:
         "awards": awards_count,
         "upcoming": upcoming_count,
     }
+
+

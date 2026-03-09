@@ -11,7 +11,7 @@ logging.basicConfig(
 )
 
 app = FastAPI(
-    title="Conf-Lister API",
+    title="Quick Lister API",
     description="Scrape and list Oil & Gas Digital Transformation / AI-ML conferences and awards",
     version="1.0.0",
 )

@@ -28,6 +28,33 @@ const DEFAULT_KEYWORDS = [
   "oil gas artificial intelligence conference",
   "offshore technology conference",
   "oil gas data analytics summit",
+  // Major industry events
+  "OTC Offshore Technology Conference 2026",
+  "SPE ATCE Annual Technical Conference Exhibition 2026",
+  "ADIPEC Abu Dhabi International Petroleum Exhibition Conference 2026",
+  "ADIPEC",
+  "CERAWeek global energy forum 2026",
+  "CERAWeek",
+  "Gastech gas LNG hydrogen conference 2026",
+  "Gastech",
+  "World Petroleum Congress 2026",
+  "WPC World Petroleum Congress 2026",
+  "SPE Offshore Technology Conference 2026",
+  "NAPE","PTC",
+  "IADC SPE drilling conference 2026",
+  "NAPE Summit exploration production 2026",
+  "URTeC unconventional resources technology conference 2026",
+  "IPTC International Petroleum Technology Conference 2026",
+  "PTC Pipeline Technology Conference 2026",
+  // Topics
+  "oil gas artificial intelligence automation conference 2026",
+  "oil gas digitalization conference 2026",
+  "oil gas CCUS carbon capture conference 2026",
+  "oil gas hydrogen conference summit 2026",
+  "oil gas sustainability conference 2026",
+  "oil gas exhibition forum workshop 2026",
+  "oil gas technical symposium 2026",
+  "oil gas trade show summit 2026",
 ];
 
 export default function ScrapeControl() {

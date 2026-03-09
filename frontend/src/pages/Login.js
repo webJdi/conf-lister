@@ -64,7 +64,7 @@ export default function Login() {
         <Card sx={{ borderRadius: 3, boxShadow: "0 8px 32px rgba(0,0,0,0.3)" }}>
           <CardContent sx={{ p: 4 }}>
             <Box sx={{ textAlign: "center", mb: 3 }}>
-              <OilBarrelIcon sx={{ fontSize: 48, color: "#1976d2", mb: 1 }} />
+              <OilBarrelIcon sx={{ fontSize: 48, color: "primary.main", mb: 1 }} />
               <Typography variant="h5" fontWeight={700}>
                 Quick Lister
               </Typography>

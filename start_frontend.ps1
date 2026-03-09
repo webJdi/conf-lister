@@ -1,4 +1,4 @@
-# Conf Lister — Start Frontend
+# Quick Lister — Start Frontend
 # -----------------------------------------------------------
 
 Write-Host "Starting Frontend..." -ForegroundColor Cyan
